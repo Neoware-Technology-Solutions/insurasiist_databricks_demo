@@ -37,11 +37,14 @@ To set up the Insurance Assistant Chatbot, follow these steps:
    git clone <repository-url>
    cd <repository-directory>
 2. **Install Required Dependencies**:
-     ```pip install -r requirements.txt
+     ```bash
+     pip install -r requirements.txt
 3. **Install Required Dependencies**:
-     ```pip install -r requirements.txt
+     ```bash
+     pip install -r requirements.txt
 4. **Running the Application: Start the application using Streamlit:**:
-     ```streamlit run main.py
+     ```bash
+     streamlit run main.py
 
    
 
