@@ -49,23 +49,30 @@ def describe_image(img):
     
     return description
 
-def create_validation_prompt(description):
+def create_validation_prompt(description,user_input):
     # Insert the description into the input prompt using an f-string
     prompt = f"""
-      
-        Please check if the damages described by the user align with the condition noted in the AI-generated description.
-        
-        **AI Description of Vehicle Damages:**
-        {description}
+    **Image Description:** {description}
+    **User Damage Description:** {user_input}
 
-        **User Description of Damages:**
-        {{user_input}}
+    ** you are a virtual assistant who verifies if user description matches with the Image description**
 
-        Based on the descriptions provided, do the user's observations about the damages match the AI's assessment? 
-        If they match or partially match, confirm that the user has accurately described the damages. 
-        If there are discrepancies, please specify which damages were correctly identified and which were missed.
+    - **If both Match:** If the user's description aligns with the image or somewhat match, confirm the matching damages and guide the user to proceed with the claim at [http://127.0.0.1:5500/claim.html].
+    - **Mismatch:** If discrepancies exist, identify the unmatched damages and request clearer images of those areas for further assessment.
+
+    **Strictly follow the Response Template:**
+
+    - **Matching:**
+        -**Confirmed Damages:**
+        -** [List of matching damages]**
+        - **Next Steps:** Proceed to claim at [http://127.0.0.1:5500/claim.html]
+
+    - **Mismatch:**
+        - **Unidentified Damages:** [List of unmatched damages]
+        - **Action:** Please upload clearer images of these areas for review.
     """
     return prompt
+
 
 def matching(user_input,instruction):
 
@@ -137,11 +144,14 @@ def retrive_result_from_vector_db(question):
 def response(context, customer_data, query):
     chat_model = ChatDatabricks(endpoint="llm_end_point", max_tokens=200)
 
-    CUSTOM_PROMPT = """You are an expert assistant for an insurance company, helping insurance agents resolve customer queries efficiently. 
-    Your role is to provide accurate information and answer questions based on the provided context. 
-    If the question is not related to insurance policies or the provided context, kindly decline to answer. 
-    If you don't know the answer, simply state that you don't know; do not attempt to fabricate a response. 
-    Keep your answers concise and to the point.
+    CUSTOM_PROMPT = """
+
+    You are an expert assistant for an insurance company, helping insurance agents resolve customer queries efficiently. Your primary responsibility is to provide accurate information and answer questions strictly based on the details provided in the insurance policy documents and the customer data.
+
+    Utilize the information from the Policy Document Information: {context} and Customer Data: {customer_data} to formulate your responses.
+    Only respond to queries that are directly related to the insurance policies and the provided context.
+    Advise customers to call the toll-free number for further assistance instead of contacting an agent directly.
+    Ensure that all responses are aligned with the information in the policy documents and customer data, and do not speculate or provide advice outside the scope of these resources.
 
     Use the following information to assist the insurance agent in answering the customer's question:
     Policy Document Information:

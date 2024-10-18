@@ -12,6 +12,7 @@ The Insurance Assistant Chatbot is designed to assist insurance agents in effici
 ## Technologies Used
 - **Embedding Model**: `system.ai.bge_large_en_v1_5` for creating embeddings from unstructured policy information.
 - **Language Model**: `mistralsystem.ai.mistral_7b_instruct_v0_2` for generating responses to customer queries based on the context provided.
+- **Image Analysis**: The image analysis is done with the help of `gemini-1.5-flash`
 - **Databricks**: The application runs on Databricks, utilizing its powerful data processing capabilities.
 
 ## How It Works
