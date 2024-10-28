@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EmailJS Claim Filing</title>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+    <script type="text/javascript">
+        (function() {
+            emailjs.init({
+                publicKey: "YBsDtqtSlQFOdVErs" // Replace with your actual public key
+            });
+        })();
+    </script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+        form {
+            background: #fff;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            max-width: 400px;
+            margin: auto;
+        }
+        input, textarea {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        button {
+            background: #007BFF;
+            color: #fff;
+            border: none;
+            padding: 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .message {
+            display: none;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Claim Filing Form</h1>
+    <form id="email-form">
+        <input type="text" id="name" placeholder="Your Name" required>
+        <input type="email" id="email" placeholder="Your Email" required>
+        <input type="text" id="claimType" placeholder="Claim Type" required>
+        <textarea id="description" placeholder="Claim Description" required></textarea>
+        <button type="button" onclick="sendEmail()">Submit</button>
+    </form>
+    <div id="response-message" class="message"></div>
+
+    <script>
+        function sendEmail() {
+            const serviceID = 'service_d5q6i1p'; // Replace with your EmailJS service ID
+            const templateID = 'template_igyiy6s'; // Replace with your EmailJS template ID
+
+            const params = {
+                name: document.getElementById('name').value,
+                email: document.getElementById('email').value,
+                claimType: document.getElementById('claimType').value,
+                description: document.getElementById('description').value
+            };
+
+            emailjs.send(serviceID, templateID, params)
+                .then((response) => {
+                    console.log('Email sent successfully!', response.status, response.text);
+                    document.getElementById('response-message').innerText = 'Email sent successfully!';
+                    document.getElementById('response-message').style.display = 'block';
+                    document.getElementById('email-form').reset(); // Reset the form after submission
+                })
+                .catch((error) => {
+                    console.error('Error sending email:', error);
+                    document.getElementById('response-message').innerText = 'Error sending email. Please try again.';
+                    document.getElementById('response-message').style.display = 'block';
+                });
+        }
+    </script>
+</body>
+</html>

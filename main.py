@@ -1,24 +1,31 @@
-import streamlit as st
-from langchain.prompts import PromptTemplate
-from langchain.chains import LLMChain
-from langchain_community.chat_models import ChatDatabricks
-from langchain_community.vectorstores import DatabricksVectorSearch
-from langchain.chains import RetrievalQA
-from langchain.prompts import PromptTemplate
-from langchain_community.chat_models import ChatDatabricks
-from databricks.vector_search.client import VectorSearchClient
-import streamlit as st
+import os
+import time
+from PIL import Image
+import openai
 import pandas as pd
-from databricks import sql
+import csv
+import chromadb
+import cv2
+import numpy as np
 from dotenv import load_dotenv
-import google.generativeai as genai
 import os
 import PIL.Image
 import openai
-from demo import final_answer,response,retrive_result_from_vector_db,search_policy_in_tables,describe_image,create_validation_prompt,matching,extract_policyid,load_table
+import streamlit as st
+import cv2
+from paddleocr import PaddleOCR  # Make sure to import PaddleOCR
+from paddleocr import draw_ocr  # Import draw_ocr if not already imported
+import numpy as np
+import base64
+import random
+import string
+import streamlit.components.v1 as components
+import google.generativeai as genai
 from IPython.display import display
 from IPython.display import Markdown
 import os
+from demo import matching, describe_image, create_validation_prompt,extract_policyid, load_table, search_policy_in_tables, retrive_result_from_vector_db, response, final_answer, save_captured_image,save_recognized_text_to_txt,structure_recognized_text,do_pdocr,generate_random_string
+
 
 # Load environment variables from .env file for secure access to sensitive data
 load_dotenv()
@@ -36,53 +43,109 @@ DATABRICKS_HTTP_PATH = os.getenv("DATABRICKS_HTTP_PATH")
 DATABRICKS_TOKEN = os.getenv("DATABRICKS_TOKEN")
 
 # Streamlit app title
-st.title("Insurassist")
-# Configure other settings and functions...
+scroll_to_top_js = """
+    <script>
+        window.onload = function() {
+            window.scrollTo(0, 0);
+        }
+    </script>
+"""
 
-# Function to render the card UI
 if 'policy_chat_messages' not in st.session_state:
     st.session_state.policy_chat_messages = []
+if "claim_submitted" not in st.session_state:
+    st.session_state.claim_submitted = False    
 
 if 'claim_chat_messages' not in st.session_state:
     st.session_state.claim_chat_messages = []
 
-# Display chat history
-st.sidebar.title("Options")
-option = st.sidebar.selectbox(
-    "What would you like to do?",
-    ("Learn about Policy", "File a Claim")
-)
+if "structured_data" not in st.session_state:
+    st.session_state.structured_data = {}
 
-# Conditional rendering based on selected option
-if option == "Learn about Policy":
-    st.title("Learn about Policy")
-    st.write("Here you can find information about various insurance policies.")
+if 'current_view' not in st.session_state:
+    st.session_state.current_view = 'learn'  # Default to learning about policy
+
+
+
+# Placeholder for chat messages
+st.markdown("""
+<style>
+    [data-testid=stSidebar] {
+        background-color: #2c3e50;  /* Dark blue */
+        color: white;  /* Text color for other content */
+        border-radius: 10px;  /* Rounded corners */
+        padding: 20px;  /* Padding inside sidebar */
+    }
+    h2 {
+        font-size: 24px;  /* Larger font size for the header */
+        text-align: left;  /* Center align the header */
+        color: white;  /* White color for the header text */
+    }
+    p {
+        font-size: 16px;  /* Font size for the description */
+        text-align: left;  /* Center align the description */
+        color: black;  /* White color for the description text */
+    }
+    .button {
+        background-color: black;  /* Black button background */
+        color: black;  /* Black text for the button */
+        border: none;  /* Remove border */
+        border-radius: 5px;  /* Rounded corners for button */
+        padding: 10px 20px;  /* Padding for button */
+        margin: 10px 0;  /* Margin for spacing between buttons */
+        text-align: left;  /* Center text in button */
+        display: block;  /* Make button a block element */
+        font-size: 16px;  /* Font size for the button text */
+        cursor: pointer;  /* Change cursor to pointer */
+</style>
+""", unsafe_allow_html=True)
+
+
+image_path = "data/download.png"  # Replace with your image file path
+image = Image.open(image_path)
+st.sidebar.image(image, caption="Your Caption Here",use_column_width=True)
+
+# Embed the video in the sidebar
+
+
+st.sidebar.markdown("<h2>Hey, it's Neo!</h2>", unsafe_allow_html=True)
+st.sidebar.markdown("<h2>Let me help you with your insurance.</h2>", unsafe_allow_html=True)
+# check1 = st.sidebar.button("Know your Policy 📄")
+learn_button = st.sidebar.button("Know your Policy 📄")
+claim_button = st.sidebar.button("File a Claim 📝 📝")
+kyc_button = st.sidebar.button("KYC Process 🔍 📸")
+
+if learn_button:
+    st.session_state.current_view = 'learn'
+elif claim_button:
+    st.session_state.current_view = 'claim'
+elif kyc_button:
+    st.session_state.current_view = 'KYC'    
+
+
+if st.session_state.current_view == 'learn':
+    
+
+    st.title("Know Your Policy")
+    st.write("💬 Have questions about your insurance? I'm here to help! 🤝 Ask away, and let’s simplify your policy together!.")
     
     # Chat functionality for learning about policies
     for message in st.session_state.policy_chat_messages:
         with st.chat_message(message["role"]):
             st.markdown(message["content"])
     
-    if prompt := st.chat_input("Ask a question about the policy..."):
+    if prompt := st.chat_input("How can I help you..."):
         st.session_state.policy_chat_messages.append({"role": "user", "content": prompt})
         with st.chat_message("user"):
             st.markdown(prompt)
-
+        with st.spinner("Processing your question..."):
         # Replace this with your logic to generate a response about the policy
-        response = final_answer(prompt)  # Example function call
+            response = final_answer(prompt)  # Example function call
         st.session_state.policy_chat_messages.append({"role": "assistant", "content": response})
         with st.chat_message("assistant"):
             st.markdown(response)
 
-elif option == "File a Claim":
-    # st.title("File a Claim")
-    st.write("Follow the steps to file a claim.")
-    st.write("1. **Upload an image related to your claim.**")
-    st.write("2. **Provide a brief description of the claim.**")
-    st.write("3. **Click 'Submit' to file your claim.**")
-    for i in range(1):
-     uploaded_file=st.file_uploader(f"Upload your asset's image here:")
-
+elif st.session_state.current_view == 'KYC':
     css = '''
 <style>
     /* Style for the specific file uploader */
@@ -110,39 +173,99 @@ elif option == "File a Claim":
 </style>
 '''
 
+
+
+
     st.markdown(css, unsafe_allow_html=True)
 
+    st.title("**Let's complete your KYC verification.**")
+   
+
+    random_suffix = generate_random_string()
+    enable = st.checkbox("Enable camera")
+    picture = st.camera_input("Take a picture", disabled=not enable)
     
-    # Image upload functionality for filing a claim
-    # uploaded_file = st.file_uploader("Upload an image for your claim", type=["png", "jpg", "jpeg", "jfif"])
+    if picture:
+         with st.spinner("Please wait, it will take a few seconds..."):
+                # Simulate processing time
+            time.sleep(5)
+            picture_filename = f"kyc_image_{random_suffix}.png"  # Filename with random suffix
+            with open(picture_filename, "wb") as f:
+                f.write(picture.getbuffer())
+        
+            if st.button("Confirm KYC Video"):
+                st.write("KYC video uploaded successfully. Please review and confirm your details and proceed to the next step.")
+                processed_image, recognized_texts = do_pdocr(picture_filename, to_show=True, showTexts=True, showScores=True)
+                processed_image = save_captured_image(processed_image, user_id=f"aa11{random_suffix}")
+                
+                save_recognized_text_to_txt(random_suffix, recognized_texts)
+                st.session_state.structured_data = structure_recognized_text(random_suffix)
+            if st.session_state.structured_data:
+                st.session_state.name = st.session_state.structured_data.get("First Name", "") + " " + st.session_state.structured_data.get("Last Name", "")
+                st.session_state.license_number = st.session_state.structured_data.get("License Number", "")
+                # Check if structured data exists
+                first_name = st.session_state.structured_data.get("First Name", "")
+                last_name = st.session_state.structured_data.get("Last Name", "")
+                dob = st.session_state.structured_data.get("Date of Birth", "")
+                license_number = st.session_state.structured_data.get("License Number", "")
 
-    # Chat functionality for filing a claim
-    for message in st.session_state.claim_chat_messages:
-        with st.chat_message(message["role"]):
-            st.markdown(message["content"])
+                st.text_input("First Name", value=first_name)
+                st.text_input("Last Name", value=last_name)
+                st.text_input("License Number", value=license_number)
+
+                # Use session state to handle form submission
+                if st.button("Confirm and Submit"):
+                    st.session_state.claim_submitted = True
+
+            # Show success message if the claim is submitted
+            if st.session_state.claim_submitted:
+                st.success(f"Hi {first_name}, your license number is {license_number}. Your KYC information has been submitted successfully! .")
     
-    if prompt := st.chat_input("Ask a question about filing a claim..."):
-        st.session_state.claim_chat_messages.append({"role": "user", "content": prompt})
-        with st.chat_message("user"):
-            st.markdown(prompt)
 
-        if uploaded_file:
-            # Display the uploaded image
-            image = PIL.Image.open(uploaded_file)
-            st.image(image, caption='Uploaded Image.', width=300) 
+        
 
-            # Generate the AI description and display it
-            st.write("Generating description for the image...")
-            description = describe_image(uploaded_file)
-            # st.write("AI Description:", description)
+elif st.session_state.current_view == 'claim':
 
-            # Create a validation prompt for comparison
-            input_prompt = create_validation_prompt(description,prompt)
+    st.markdown("""
+    ### Instructions:
+    - Upload an asset photo related to your claim.
+    - Describe the damages observed in the asset in the text box.
+    - Click the 'Submit' button.
+""")
+    # st.write(f"Name: {st.session_state.name}")
+    # st.write(f"License Number: {st.session_state.license_number}")
+    uploaded_file = st.file_uploader("Upload an Asset Photo for Your Claim", type=["jpg", "jpeg", "png"])
+    prompt = st.text_input("Please describe the damages observed in the asset:")
 
-            # Compare user input (prompt) with AI description
-            result = matching(prompt, input_prompt)
-            response = f"The description for your claim is: {result}"  # Example response
-            st.session_state.claim_chat_messages.append({"role": "assistant", "content": response})
-            with st.chat_message("assistant"):
-                st.markdown(response)
-            
+ 
+        # Open the uploaded image using PIL
+        
+
+        # Button to submit the response
+    if st.button("Submit"):
+            with st.spinner("Please wait, it will take a few seconds..."):
+                # Simulate processing time
+                time.sleep(5)  # Replace this with your actual processing code
+                image = PIL.Image.open(uploaded_file)
+
+        # Display the uploaded image
+                st.image(image, caption="Uploaded Image", width=300)
+                
+                # Generate the AI description
+                description = describe_image(uploaded_file)
+                
+                # Create a validation prompt for comparison
+                input_prompt = create_validation_prompt(description, prompt)
+
+                # Compare user input with AI description
+                result = matching(prompt, input_prompt)
+                response = f"The description for your claim is: {result}"
+
+                # Display the result
+                st.success(response)
+    else:
+        st.warning("Please upload an image and describe the damages before submitting.")
+
+components.html(scroll_to_top_js)                
+
+    
