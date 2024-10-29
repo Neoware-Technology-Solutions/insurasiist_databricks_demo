@@ -59,7 +59,7 @@ def ensure_directory_exists(directory_path):
 def save_recognized_text_to_txt(user_id, recognized_texts):
     """Save the entire recognized text to a text file in the 'recognized_texts' folder using user ID as filename."""
     # Define the folder for recognized texts and ensure it exists
-    recognized_text_folder = "output/recognized_texts"
+    recognized_text_folder = "data/output/recognized_texts"
     ensure_directory_exists(recognized_text_folder)
     
     filename = os.path.join(recognized_text_folder, f"{user_id}_recognized_text.txt")  # File path with folder
@@ -70,7 +70,7 @@ def save_recognized_text_to_txt(user_id, recognized_texts):
 def save_captured_image(image, user_id):
     """Save the captured image in the 'captured_images' folder using user ID as part of the filename."""
     # Define the folder for captured images and ensure it exists
-    captured_image_folder = "output/captured_images"
+    captured_image_folder = "data/output/captured_images"
     ensure_directory_exists(captured_image_folder)
 
     filename = os.path.join(captured_image_folder, f"{user_id}_captured_id.png")  # File path with folder
@@ -79,7 +79,7 @@ def save_captured_image(image, user_id):
 
 def structure_recognized_text(user_id):
     """Read and structure the recognized text for display from the 'recognized_texts' folder."""
-    filename = f"output/recognized_texts/{user_id}_recognized_text.txt"  # Use the folder path and user ID
+    filename = f"data/output/recognized_texts/{user_id}_recognized_text.txt"  # Use the folder path and user ID
     structured_data = {}
 
     # Ensure the file exists

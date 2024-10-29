@@ -13,20 +13,30 @@ import PIL.Image
 import openai
 import streamlit as st
 import cv2
-from paddleocr import PaddleOCR  # Make sure to import PaddleOCR
-from paddleocr import draw_ocr  # Import draw_ocr if not already imported
 import numpy as np
 import base64
 import random
 import string
 import streamlit.components.v1 as components
+from paddleocr import PaddleOCR  # Make sure to import PaddleOCR
+from paddleocr import draw_ocr 
 import google.generativeai as genai
 from IPython.display import display
 from IPython.display import Markdown
 import os
+from langchain.prompts import PromptTemplate
+from langchain.chains import LLMChain
+from langchain_community.chat_models import ChatDatabricks
+from langchain_community.vectorstores import DatabricksVectorSearch
+from langchain.chains import RetrievalQA
+from langchain.prompts import PromptTemplate
+from langchain_community.chat_models import ChatDatabricks
+from databricks.vector_search.client import VectorSearchClient
+from databricks import sql
 from kyc import  save_captured_image,save_recognized_text_to_txt,structure_recognized_text,do_pdocr,generate_random_string,ensure_directory_exists
 from policy import extract_policyid, load_table, retrive_result_from_vector_db,search_policy_in_tables, response, final_answer
 from claim import matching, describe_image, create_validation_prompt
+
 # Load environment variables from .env file for secure access to sensitive data
 load_dotenv()
 

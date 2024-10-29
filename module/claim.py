@@ -1,30 +1,30 @@
-import streamlit as st
-import numpy as np
-from langchain.prompts import PromptTemplate
-from langchain.chains import LLMChain
-from langchain_community.chat_models import ChatDatabricks
-from langchain_community.vectorstores import DatabricksVectorSearch
-from langchain.chains import RetrievalQA
-from langchain.prompts import PromptTemplate
-from langchain_community.chat_models import ChatDatabricks
-from databricks.vector_search.client import VectorSearchClient
-from paddleocr import PaddleOCR  # Make sure to import PaddleOCR
-from paddleocr import draw_ocr  # Import draw_ocr if not already imported
-import streamlit as st
-import cv2
-import base64
-import random
-import string
+import os
+import time
+from PIL import Image
+import openai
 import pandas as pd
-from databricks import sql
+import csv
+import chromadb
+import cv2
+import numpy as np
 from dotenv import load_dotenv
-import google.generativeai as genai
 import os
 import PIL.Image
 import openai
+import streamlit as st
+import cv2
+from paddleocr import PaddleOCR  # Make sure to import PaddleOCR
+from paddleocr import draw_ocr  # Import draw_ocr if not already imported
+import numpy as np
+import base64
+import random
+import string
+import streamlit.components.v1 as components
+import google.generativeai as genai
 from IPython.display import display
 from IPython.display import Markdown
 import os
+
 
 # Load environment variables from .env file
 load_dotenv()
@@ -34,10 +34,6 @@ api_key = os.getenv("API_KEY")
 genai.configure(api_key=api_key)
 model = genai.GenerativeModel('gemini-1.5-flash')
 
-# Retrieve Databricks configuration from environment variables
-DATABRICKS_SERVER_HOSTNAME = os.getenv("DATABRICKS_SERVER_HOSTNAME")
-DATABRICKS_HTTP_PATH = os.getenv("DATABRICKS_HTTP_PATH")
-DATABRICKS_TOKEN = os.getenv("DATABRICKS_TOKEN")
 
 
 ##FILE A CLAIM #
@@ -77,7 +73,7 @@ def create_validation_prompt(description,user_input):
 - **Matching:**
     - **Confirmed Damages:** 
         - [List of matching damages]
-    - **Next Steps:** Proceed to claim at [http://127.0.0.1:5500/data/claim.html]
+    - **Next Steps:** Proceed to claim at [http://127.0.0.1:5500/claim.html]
 
 - **Mismatch:**
     - **Unidentified Damages:** 
