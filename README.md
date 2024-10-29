@@ -6,13 +6,15 @@ The Insurance Assistant Chatbot is designed to assist insurance agents in effici
 
 ## Features
 - **Customer Query Handling**: Agents can ask questions about customer insurance policies, and the assistant will provide answers based on the provided context.
-- **Image Analysis**: Users can upload images of accident-damaged vehicles along with descriptions. The assistant will analyze the claims against the images to verify their accuracy.
+- **Image Analysis**: Users can upload images of accident-damaged vehicles along with descriptions. The assistant will analyze the claims against the images to verify their accuracy.If matching gives a link to file the claim and once the form filled a confirmation mail will be send to user's mail id.
 - **Structured and Unstructured Data Utilization**: The assistant can effectively use structured data from customer databases and unstructured data from policy documents.
+- **KYC Submission**: Customers can complete their KYC (Know Your Customer) requirements through the assistant. The assistant collects and verifies the necessary documents, streamlining the KYC process for quick policy activation.
 
 ## Technologies Used
 - **Embedding Model**: `system.ai.bge_large_en_v1_5` for creating embeddings from unstructured policy information.
 - **Language Model**: `mistralsystem.ai.mistral_7b_instruct_v0_2` for generating responses to customer queries based on the context provided.
 - **Image Analysis**: The image analysis is done with the help of `gemini-1.5-flash`
+- **KYC**: PaddleOCR is used to extract and verify text from uploaded KYC documents, ensuring efficient and accurate document processing.
 - **Databricks**: The application runs on Databricks, utilizing its powerful data processing capabilities.
 
 ## How It Works
@@ -29,6 +31,16 @@ The Insurance Assistant Chatbot is designed to assist insurance agents in effici
    - Users can upload images of vehicles involved in accidents.
    - They provide a description of the damage.
    - The assistant checks the user's claims against the uploaded images to validate their accuracy.
+
+4. **KYC Submission**:
+
+- Customers can submit KYC documents through the assistant.
+- The assistant uses PaddleOCR to extract and verify information from these documents, enabling a streamlined and efficient process for policy activations. 
+
+## Folder Structure
+
+**Input Folder**: Place example input images in the data/input folder. This folder contains all the images used for image analysis and KYC verification.
+**Output Folder**: Processed results and recognized texts will be saved in data/output. This folder will be created automatically if it doesn’t exist.
 
 ## Setup Instructions
 To set up the Insurance Assistant Chatbot, follow these steps:
@@ -48,6 +60,7 @@ To set up the Insurance Assistant Chatbot, follow these steps:
      streamlit run main.py
 
    
+
 
 
 
