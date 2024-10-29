@@ -53,7 +53,8 @@ To set up the Insurance Assistant Chatbot, follow these steps:
      ```bash
      pip install -r requirements.txt
 3. **Environment Variables Setup**
-- To configure the Insurance Assistant Chatbot, create a .env file in the root directory with the following variables: 
+- To configure the Insurance Assistant Chatbot, create a .env file in the root directory with the following variables:
+   ```bash
       API_KEY=gemini
       DATABRICKS_SERVER_HOSTNAME=your_databricks_server_hostname
       DATABRICKS_HTTP_PATH=your_databricks_http_path
