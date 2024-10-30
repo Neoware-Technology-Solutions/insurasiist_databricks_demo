@@ -1,58 +1,59 @@
-import os
-import time
-from PIL import Image
-import openai
-import pandas as pd
-import csv
-import chromadb
-import cv2
-import numpy as np
-from dotenv import load_dotenv
-import os
-import PIL.Image
-import openai
 import streamlit as st
+import chromadb
+import openai
+from dotenv import load_dotenv
+from openai import OpenAI
+import pandas as pd
+import os
 import cv2
+from paddleocr import PaddleOCR  # Make sure to import PaddleOCR
+from paddleocr import draw_ocr  # Import draw_ocr if not already imported
 import numpy as np
 import base64
 import random
 import string
 import streamlit.components.v1 as components
-from paddleocr import PaddleOCR  # Make sure to import PaddleOCR
-from paddleocr import draw_ocr 
 import google.generativeai as genai
 from IPython.display import display
 from IPython.display import Markdown
-import os
-from langchain.prompts import PromptTemplate
-from langchain.chains import LLMChain
-from langchain_community.chat_models import ChatDatabricks
-from langchain_community.vectorstores import DatabricksVectorSearch
-from langchain.chains import RetrievalQA
-from langchain.prompts import PromptTemplate
-from langchain_community.chat_models import ChatDatabricks
-from databricks.vector_search.client import VectorSearchClient
-from databricks import sql
-from kyc import  save_captured_image,save_recognized_text_to_txt,structure_recognized_text,do_pdocr,generate_random_string,ensure_directory_exists
-from policy import extract_policyid, load_table, retrive_result_from_vector_db,search_policy_in_tables, response, final_answer
-from claim import matching, describe_image, create_validation_prompt
+from PIL import Image
+import PIL.Image
+import time
+from PIL import Image
 
-# Load environment variables from .env file for secure access to sensitive data
+
+
+
+from src.policy import retrive_result_from_vector_db,response,fetch_policyid,final_answer,get_policy_data_and_filter
+from src.claim import describe_image,create_validation_prompt,matching
+from src.kyc import save_recognized_text_to_txt,save_captured_image,display_structured_text,generate_random_string,ensure_directory_exists,structure_recognized_text,do_pdocr,create_file_path
+
+
+client = chromadb.PersistentClient(path="./content")
+
+# Create or access a collection
+collection = client.get_collection(name="chunked_text_files_collections")
+
+
+
+# Load environment variables from .env file
 load_dotenv()
+OPENAI_API_KEY=os.getenv("OPENAI_API_KEY")
+openai.api_key = OPENAI_API_KEY
 
-# Set API key for Google Generative AI
 api_key = os.getenv("API_KEY")
 genai.configure(api_key=api_key)
-
-# Initialize the Generative AI model
 model = genai.GenerativeModel('gemini-1.5-flash')
 
-# Retrieve Databricks configuration from environment variables
-DATABRICKS_SERVER_HOSTNAME = os.getenv("DATABRICKS_SERVER_HOSTNAME")
-DATABRICKS_HTTP_PATH = os.getenv("DATABRICKS_HTTP_PATH")
-DATABRICKS_TOKEN = os.getenv("DATABRICKS_TOKEN")
 
-# Streamlit app title
+
+
+
+
+
+
+
+
 scroll_to_top_js = """
     <script>
         window.onload = function() {
@@ -111,7 +112,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 
-image_path = "data/download.png"  # Replace with your image file path
+image_path = "data/ui_img/download.png"  # Replace with your image file path
 image = Image.open(image_path)
 st.sidebar.image(image, caption="Your Caption Here",use_column_width=True)
 
@@ -135,7 +136,7 @@ elif kyc_button:
 
 if st.session_state.current_view == 'learn':
     
-
+# if check1:
     st.title("Know Your Policy")
     st.write("💬 Have questions about your insurance? I'm here to help! 🤝 Ask away, and let’s simplify your policy together!.")
     
@@ -154,6 +155,7 @@ if st.session_state.current_view == 'learn':
         st.session_state.policy_chat_messages.append({"role": "assistant", "content": response})
         with st.chat_message("assistant"):
             st.markdown(response)
+
 
 elif st.session_state.current_view == 'KYC':
     css = '''
@@ -187,7 +189,6 @@ elif st.session_state.current_view == 'KYC':
 
 
     st.markdown(css, unsafe_allow_html=True)
-
     st.title("**Let's complete your KYC verification.**")
    
 
@@ -200,14 +201,24 @@ elif st.session_state.current_view == 'KYC':
                 # Simulate processing time
             time.sleep(5)
             picture_filename = f"kyc_image_{random_suffix}.png"  # Filename with random suffix
-            with open(picture_filename, "wb") as f:
-                f.write(picture.getbuffer())
+
+            output_directory = "data/output/taken_pic"  # Path to the desired folder
+
+# Create the directory if it doesn't exist
+            os.makedirs(output_directory, exist_ok=True)
+
+            # Complete file path
+            file_path = os.path.join(output_directory, picture_filename)
+
+            # Save the image to the specified directory
+            with open(file_path, "wb") as f:
+                f.write(picture.getbuffer())  # Assuming picture is a BytesIO object
         
             if st.button("Confirm KYC Video"):
                 st.write("KYC video uploaded successfully. Please review and confirm your details and proceed to the next step.")
-                processed_image, recognized_texts = do_pdocr(picture_filename, to_show=True, showTexts=True, showScores=True)
+                processed_image, recognized_texts = do_pdocr(file_path, to_show=True, showTexts=True, showScores=True)
                 processed_image = save_captured_image(processed_image, user_id=f"aa11{random_suffix}")
-                
+                print("xxxxxx", recognized_texts)
                 save_recognized_text_to_txt(random_suffix, recognized_texts)
                 st.session_state.structured_data = structure_recognized_text(random_suffix)
             if st.session_state.structured_data:
@@ -230,9 +241,7 @@ elif st.session_state.current_view == 'KYC':
             # Show success message if the claim is submitted
             if st.session_state.claim_submitted:
                 st.success(f"Hi {first_name}, your license number is {license_number}. Your KYC information has been submitted successfully! .")
-    
 
-        
 
 elif st.session_state.current_view == 'claim':
 
@@ -278,4 +287,3 @@ elif st.session_state.current_view == 'claim':
 
 components.html(scroll_to_top_js)                
 
-    

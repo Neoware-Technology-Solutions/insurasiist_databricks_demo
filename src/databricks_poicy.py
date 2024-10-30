@@ -6,19 +6,17 @@ import pandas as pd
 import os
 
 
-openai.api_key = "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"
 
 client = chromadb.PersistentClient(path="./content")
 
 # Create or access a collection
-collection = client.get_collection(name="chunked_text_files_collections")
+collection = client.get_collection(name="chunked_text_files_collections1")
 
 
 
 # Load environment variables from .env file
 load_dotenv()
-API_KEY=os.getenv("OPENAI_API_KEY")
-openai.api_key = API_KEY
+DATABRICKS_TOKEN = os.getenv("DATABRICKS_TOKEN")
 
 
 
@@ -107,12 +105,40 @@ def get_policy_data_and_filter(policy_id, csv_name):
 
     # Return the results from both the selected CSV and the 'policy_data.csv'
     return f"Selected CSV ({csv_name}) Data:\n{selected_csv_msg}\n\n'policy_data.csv' Data:\n{policy_data_msg}"
-def retrive_result_from_vector_db(query):
-    results = collection.query(query_texts=query, n_results=5, include=['documents','embeddings'])
-    print("aaaaaa",results)
+
+
+
+
+
+##################################DATABRICKS###################################################
+
+openai_client = OpenAI(
+    api_key=DATABRICKS_TOKEN,
+    base_url="https://dbc-fdab60e7-1257.cloud.databricks.com/serving-endpoints"
+)
+
+# Function to create embeddings using the Databricks model
+def create_embedding(input_string):
+    embeddings = openai_client.embeddings.create(
+        input=input_string,
+        model="vec_search"  # Use your specific model name here
+    )
+    return embeddings.data[0].embedding
+
+# DATABRICKS EMBEDDING FUNCTION Query function
+def query_chunks(query_text, top_k=5):
+    # Create an embedding for the query text
+    query_embedding = create_embedding(query_text)
+    
+    # Perform a similarity search in the collection
+    results = collection.query(
+        query_embeddings=[query_embedding], include=["documents"] ,# The embedding of the query
+        n_results=top_k  # Number of similar results to return
+    )
     retrieved_documents= results['documents'][0]
 
     return retrieved_documents
+##################################DATABRICKS###################################################
  
 def response(context, customer_data, query):
     # Define the prompt, combining context and customer data into the system message
@@ -157,7 +183,7 @@ def final_answer(question):
     print("xxx",policy_id)
     data=get_policy_data_and_filter(policy_id,csv)
     print("abcdef",data)
-    documents = retrive_result_from_vector_db(question)
+    documents = query_chunks(question)
     print("yyyy",documents)
     final_answer = response(documents, data, question)
     return final_answer
