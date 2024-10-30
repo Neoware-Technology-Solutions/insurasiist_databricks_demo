@@ -6,7 +6,8 @@ The Insurance Assistant Chatbot is designed to assist insurance agents in effici
 
 ## Features
 - **Customer Query Handling**: Agents can ask questions about customer insurance policies, and the assistant will provide answers based on the provided context.
-- **Image Analysis**: Users can upload images of accident-damaged vehicles along with descriptions. The assistant will analyze the claims against the images to verify their accuracy.If matching gives a link to file the claim and once the form filled a confirmation mail will be send to user's mail id.
+-**Multimodal Capabilities**:
+Image Analysis:  Users can upload images of accident-damaged vehicles along with descriptions. The assistant will analyze the claims against the images to verify their accuracy.If matching gives a link to file the claim and once the form filled a confirmation mail will be send to user's mail id.
 - **Structured and Unstructured Data Utilization**: The assistant can effectively use structured data from customer databases and unstructured data from policy documents.
 - **KYC Submission**: Customers can complete their KYC (Know Your Customer) requirements through the assistant. The assistant collects and verifies the necessary documents, streamlining the KYC process for quick policy activation.
 
