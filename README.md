@@ -66,11 +66,9 @@ To set up the Insurance Assistant Chatbot, follow these steps:
       DATABRICKS_HTTP_PATH=your_databricks_http_path
       DATABRICKS_TOKEN=your_databricks_token
       OPENAI_API_KEY=api_key
-    
 5. **Running the Application: Start the application using Streamlit:**:
      ```bash
      streamlit run main.py
-
    
 
 
