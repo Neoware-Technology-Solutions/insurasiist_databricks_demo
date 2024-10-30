@@ -53,7 +53,7 @@ def create_embedding(input_string):
     return embeddings.data[0].embedding
 
 # File paths of your text files
-file_paths = [r"data/input/Buyers_guide.txt", r"data/input/Consumer-Bill-Of-Rights.txt", r"data/input/Declaration.txt"]
+file_paths = [r"data/input/policy_doc/Buyers_guide.txt", r"data/input/policy_doc/Consumer-Bill-Of-Rights.txt", r"data/input/policy_doc/Declaration.txt"]
 
 # Process each file and store in chunks
 for file_path in file_paths:
