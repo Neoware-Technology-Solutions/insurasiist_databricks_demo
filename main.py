@@ -48,17 +48,19 @@ from src.claim import describe_image,create_validation_prompt,matching
 from src.kyc import save_recognized_text_to_txt,save_captured_image,display_structured_text,generate_random_string,ensure_directory_exists,structure_recognized_text,do_pdocr,create_file_path
 
 
-client = chromadb.PersistentClient(path="./content")
 
-# Create or access a collection
-collection = client.get_collection(name="chunked_text_files_collections")
+
+
+# Retrieve Databricks configuration from environment variables
+DATABRICKS_SERVER_HOSTNAME = os.getenv("DATABRICKS_SERVER_HOSTNAME")
+DATABRICKS_HTTP_PATH = os.getenv("DATABRICKS_HTTP_PATH")
+DATABRICKS_TOKEN = os.getenv("DATABRICKS_TOKEN")
 
 
 
 # Load environment variables from .env file
 load_dotenv()
-OPENAI_API_KEY=os.getenv("OPENAI_API_KEY")
-openai.api_key = OPENAI_API_KEY
+
 
 api_key = os.getenv("API_KEY")
 genai.configure(api_key=api_key)
