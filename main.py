@@ -43,7 +43,7 @@ from PIL import Image
 
 
 
-from src.databricks_policy import ,response,fetch_policyid,final_answer,get_policy_data_and_filter
+from src.databricks_policy import create_embedding,query_chunks,response,fetch_policyid,final_answer,get_policy_data_and_filter
 from src.claim import describe_image,create_validation_prompt,matching
 from src.kyc import save_recognized_text_to_txt,save_captured_image,display_structured_text,generate_random_string,ensure_directory_exists,structure_recognized_text,do_pdocr,create_file_path
 
