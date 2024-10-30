@@ -11,174 +11,183 @@ DATABASES = {
     }
 }
 
-
-
-
-
-
-
-
-
-import chromadb
-import openai
-from dotenv import load_dotenv
-from openai import OpenAI
+import streamlit as st
+from langchain.prompts import PromptTemplate
+from langchain.chains import LLMChain
+from langchain_community.chat_models import ChatDatabricks
+from langchain_community.vectorstores import DatabricksVectorSearch
+from langchain.chains import RetrievalQA
+from langchain.prompts import PromptTemplate
+from langchain_community.chat_models import ChatDatabricks
+from databricks.vector_search.client import VectorSearchClient
+import streamlit as st
 import pandas as pd
+from databricks import sql
+from dotenv import load_dotenv
+import google.generativeai as genai
 import os
+import PIL.Image
+import openai
 
 
-openai.api_key = "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"
 
-client = chromadb.PersistentClient(path="./content")
-
-# Create or access a collection
-collection = client.get_collection(name="chunked_text_files_collections")
-
-
+from IPython.display import display
+from IPython.display import Markdown
+import os
 
 # Load environment variables from .env file
 load_dotenv()
-API_KEY=os.getenv("OPENAI_API_KEY")
-openai.api_key = API_KEY
 
+# Access the API key from environment variables
+api_key = os.getenv("API_KEY")
+genai.configure(api_key=api_key)
+model = genai.GenerativeModel('gemini-1.5-flash')
 
-
-
-
-def fetch_policyid(user_question):
-    prompt = """
-
-    User Question: {user_question}
-
-    Your task is to extract the policy id from the user's question, if mentioned, and return it. 
-    Follow these instructions strictly:
-    - Only return the policy id with no additional text.
-    - Do not include "PolicyID:" or any other extra wording—only the number.
-    - You have three CSVs to check for data retrieval:
-        1. Claim.csv - Contains columns: ClaimID, PolicyID, Name, ClaimAmount, ClaimType, ClaimStatus, Claimed Date, Claim Settlement Date, Date of Loss.
-        2. contact_info.csv - Contains columns: PolicyID, Name, Phone number, E-mail ID.
-
-    Based on the user query, determine which CSV file is most suitable for retrieving information related to the **PolicyID**.
-
-    Response template:
-    Policy Id: [PolicyID]
-    Csv: [CSV file name]
-
+def describe_image(img):
+    # Pass the uploaded file directly to PIL.Image.open()
+    img = PIL.Image.open(img)
     
-    """
- 
-
-   
-    response = openai.chat.completions.create(
-        model="gpt-3.5-turbo",
-        messages=[
-            {"role": "system", "content": prompt},
-            {"role": "user", "content": user_question}
-        ]
-    )
- 
-
- 
-    response_text = response.choices[0].message.content.strip()
-    print("xxxxx",response_text)
-
-# Assuming the response follows the template: "Policy Id: [PolicyID]\nCsv: [CSV file name]"
-# Split the response to get Policy Id and Csv
-    lines = response_text.splitlines()
-    policy_id = lines[0].split(":")[1].strip()  # Extract the Policy ID
-    csv_name = lines[1].split(":")[1].strip()  # Extract the CSV name
-
-    # Return both Policy ID and CSV name
-    return policy_id, csv_name
-
-
-def get_policy_data_and_filter(policy_id, csv_name):
-    # Load the appropriate CSV file based on the OpenAI response
-    if csv_name.lower() == 'claim.csv':
-        df = pd.read_csv('data/input/customer_database/claim_data.csv')
-    elif csv_name.lower() == 'contact_info.csv':
-        df = pd.read_csv('data/input/customer_database/contact_info.csv')
-    else:
-        return "Invalid CSV file name."
-
-    # Filter the selected CSV by PolicyID
-    filtered_df = df[df['PolicyID'] == policy_id]
-    print("filter",filtered_df)
+    # Call the model to generate a description (mock for now, API does not support images yet)
+    response = model.generate_content([ """You are an expert in automobile repair and accident analysis. 
+        Analyze the uploaded image of the vehicle and provide a detailed description of the visible damages, addressing the following:
+        - List all damaged or broken parts of the vehicle.
+        - Note any signs of structural damage.
+        - Specify which components need repair or replacement (e.g., windshield, bumper, headlights, tires).
+        - Mention any additional issues such as scratches, dents, or cracks.
+        - Include an assessment of the overall impact on the vehicle's safety and functionality.
+        
+        This description is intended for an insurance claim report. Please provide a comprehensive analysis.
+        """,img],stream=False)  # Replace with actual functionality when supported
+    description = response.text if response else "Description could not be generated."
     
-    # If no matching records, return a message
-    if filtered_df.empty:
-        return f"No data found for Policy ID: {policy_id} in {csv_name}"
+    return description
 
-    # Load 'policy_data.csv' and filter it by the same PolicyID
-    try:
-        policy_data_df = pd.read_csv('data/input/customer_database/policy_data.csv')
-        filtered_policy_data_df = policy_data_df[policy_data_df['PolicyID'] == policy_id]
-    except FileNotFoundError:
-        return "'policy_data.csv' not found."
-
-    # If no matching records in policy_data.csv, return a message
-    if filtered_policy_data_df.empty:
-        policy_data_msg = f"No data found for Policy ID: {policy_id} in 'policy_data.csv'"
-    else:
-        # Include all matching records
-        policy_data_msg = "\n".join([f"{', '.join([f'{col}: {val}' for col, val in row.items()])}" for _, row in filtered_policy_data_df.iterrows()])
-
-    # Prepare the result from the selected CSV
-    selected_csv_msg = "\n".join([f"{', '.join([f'{col}: {val}' for col, val in row.items()])}" for _, row in filtered_df.iterrows()])
-
-    # Return the results from both the selected CSV and the 'policy_data.csv'
-    return f"Selected CSV ({csv_name}) Data:\n{selected_csv_msg}\n\n'policy_data.csv' Data:\n{policy_data_msg}"
-def retrive_result_from_vector_db(query):
-    results = collection.query(query_texts=query, n_results=5, include=['documents','embeddings'])
-    print("aaaaaa",results)
-    retrieved_documents= results['documents'][0]
-
-    return retrieved_documents
- 
-def response(context, customer_data, query):
-    # Define the prompt, combining context and customer data into the system message
+def create_validation_prompt(description):
+    # Insert the description into the input prompt using an f-string
     prompt = f"""
-You are an expert assistant for an insurance company, helping insurance agents resolve customer queries efficiently. Your primary responsibility is to provide accurate information and answer questions strictly based on the details provided in the insurance policy documents and the customer data.
+      
+        Please check if the damages described by the user align with the condition noted in the AI-generated description.
+        
+        **AI Description of Vehicle Damages:**
+        {description}
 
-Utilize the information from both Policy Document Information: {context} and Customer Data: {customer_data} to formulate your responses.
-Only respond to queries that are directly related to the insurance policies and the provided context.
-Advise customers to call the toll-free number for further assistance instead of contacting an agent directly.
-Ensure that all responses are aligned with the information in the policy documents and customer data, and do not speculate or provide advice outside the scope of these resources.
+        **User Description of Damages:**
+        {{user_input}}
 
-**Policy Document Information:**
-{context}
+        Based on the descriptions provided, do the user's observations about the damages match the AI's assessment? 
+        If they match or partially match, confirm that the user has accurately described the damages. 
+        If there are discrepancies, please specify which damages were correctly identified and which were missed.
+    """
+    return prompt
 
-**Customer Data:**
-{customer_data}
+def matching(user_input,instruction):
 
-**Question:** {query}
+    model = genai.GenerativeModel(
+    "models/gemini-1.5-flash", system_instruction=instruction)
+    response = model.generate_content(user_input)
+    print(response.text)
+    return response.text
 
-**Answer:**
-"""
 
-    # Structure the messages properly for the API call
-    messages = [
-        {"role": "system", "content": prompt},
-        {"role": "user", "content": query}  # Only include the user's question
-    ]
+# Retrieve Databricks configuration from environment variables
+DATABRICKS_SERVER_HOSTNAME = os.getenv("DATABRICKS_SERVER_HOSTNAME")
+DATABRICKS_HTTP_PATH = os.getenv("DATABRICKS_HTTP_PATH")
+DATABRICKS_TOKEN = os.getenv("DATABRICKS_TOKEN")
 
-    # Call OpenAI API
-    response = openai.chat.completions.create(
-        model="gpt-3.5-turbo",
-        messages=messages
+def extract_policyid(question):
+    chat_model = ChatDatabricks(endpoint="llm_end_point", max_tokens=50)
+
+    EXTRACT_POLICY_ID_PROMPT = """You are an assistant for an insurance company. Your task is to extract the policy ID from the user's question. Never give any extra sentence.
+    If the question does not contain a policy ID, respond with "No policy ID found".
+
+    Question: {query}
+    Policy ID:
+    """
+
+    prompt = PromptTemplate(template=EXTRACT_POLICY_ID_PROMPT, input_variables=["query"])
+    chain = LLMChain(llm=chat_model, prompt=prompt)
+    response = chain.run({"query": question})
+    return response.strip()
+
+
+def load_table(table_name):
+    connection = sql.connect(
+        server_hostname=DATABRICKS_SERVER_HOSTNAME,
+        http_path=DATABRICKS_HTTP_PATH,
+        access_token=DATABRICKS_TOKEN
     )
+    query = f"SELECT * FROM {table_name}"
+    df = pd.read_sql(query, connection)
+    connection.close()
+    return df
+
+def search_policy_in_tables(policy_id):
+    table_names = [
+        "workspace.rag.claim_data",
+        "workspace.rag.policy_data",
+        "workspace.rag.contact_info"
+    ]
+    result = {}
     
-    # Extract the response text
-    response_text = response.choices[0].message.content.strip()
-    print("RRRRRR", response_text)
-    return response_text  # Return the response text for further use
+    for table_name in table_names:
+        df = load_table(table_name)
+        filtered_df = df[df["PolicyID"] == policy_id]
+        if not filtered_df.empty:
+            result[table_name] = filtered_df.to_dict(orient="records")
+    
+    return result
+
+def retrive_result_from_vector_db(question):
+    client = VectorSearchClient(disable_notice=True)
+    results = client.get_index("data","workspace.rag.document_id").similarity_search(
+        query_text=question,
+        columns=["text"],
+        num_results=2
+    )
+    docs = results.get('result', {}).get('data_array', [])
+    return docs 
+
+def response(context, customer_data, query):
+    chat_model = ChatDatabricks(endpoint="llm_end_point", max_tokens=200)
+
+    CUSTOM_PROMPT = """You are an expert assistant for an insurance company, helping insurance agents resolve customer queries efficiently. 
+    Your role is to provide accurate information and answer questions based on the provided context. 
+    If the question is not related to insurance policies or the provided context, kindly decline to answer. 
+    If you don't know the answer, simply state that you don't know; do not attempt to fabricate a response. 
+    Keep your answers concise and to the point.
+
+    Use the following information to assist the insurance agent in answering the customer's question:
+    Policy Document Information:
+    {context}
+
+    Customer Data:
+    {customer_data}
+
+    Question: {query}
+    Answer:
+    """
+
+    prompt = PromptTemplate(template=CUSTOM_PROMPT, input_variables=["context", "customer_data", "query"])
+    chain = LLMChain(llm=chat_model, prompt=prompt)
+    response = chain.run(context=context, customer_data=customer_data, query=query)
+    return response
 
 def final_answer(question):
-    policy_id,csv =fetch_policyid (question)
-    print("xxx",policy_id)
-    data=get_policy_data_and_filter(policy_id,csv)
-    print("abcdef",data)
+    policy_id,csv = extract_policyid(question)
     documents = retrive_result_from_vector_db(question)
-    print("yyyy",documents)
+    data = search_policy_in_tables(policy_id)
     final_answer = response(documents, data, question)
     return final_answer
+
+
+
+
+
+
+
+
+
+
+   
+ 
+
