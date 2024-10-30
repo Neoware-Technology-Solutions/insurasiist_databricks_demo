@@ -140,7 +140,7 @@ openai_client = OpenAI(
 def create_embedding(input_string):
     embeddings = openai_client.embeddings.create(
         input=input_string,
-        model="vec_search"  # Use your specific model name here
+        model="embed_end_point"  # Use your specific model name here
     )
     return embeddings.data[0].embedding
 
