@@ -1,42 +1,26 @@
+
+
 import os
-import time
-from PIL import Image
-import openai
-import pandas as pd
-import csv
-import chromadb
-import cv2
 import numpy as np
-from dotenv import load_dotenv
-import os
-import PIL.Image
-import openai
-import streamlit as st
-import cv2
-from paddleocr import PaddleOCR  # Make sure to import PaddleOCR
-from paddleocr import draw_ocr  # Import draw_ocr if not already imported
-import numpy as np
-import base64
-import random
-import string
-import streamlit.components.v1 as components
 import google.generativeai as genai
 from IPython.display import display
 from IPython.display import Markdown
-import os
+import PIL.Image
 
 
-# Load environment variables from .env file
-load_dotenv()
 
-# Access the API key from environment variables
+
+
+
+
+
+
+
+
+
 api_key = os.getenv("API_KEY")
 genai.configure(api_key=api_key)
 model = genai.GenerativeModel('gemini-1.5-flash')
-
-
-
-##FILE A CLAIM #
 
 def describe_image(img):
     # Pass the uploaded file directly to PIL.Image.open()
@@ -89,3 +73,7 @@ def matching(user_input,instruction):
     response = model.generate_content(user_input)
     print(response.text)
     return response.text
+
+
+
+

@@ -1,27 +1,25 @@
-import streamlit as st
-import numpy as np
+import cv2
+import os
 from paddleocr import PaddleOCR  # Make sure to import PaddleOCR
 from paddleocr import draw_ocr  # Import draw_ocr if not already imported
-import streamlit as st
-import cv2
+import numpy as np
 import base64
-import random
 import string
-import pandas as pd
-from dotenv import load_dotenv
-import google.generativeai as genai
-import os
-import PIL.Image
-import openai
-from IPython.display import display
-from IPython.display import Markdown
-import os
+import random
+import streamlit as st
 
 
 
-## KYC UPLOAD ##
+
+
+
+
+
+
+
 
 ocr = PaddleOCR(lang='en')
+
 def do_pdocr(img, to_show=False, showTexts=True, showScores=True):
 
     img_path = img  # Ensure this path is correct
@@ -67,6 +65,22 @@ def save_recognized_text_to_txt(user_id, recognized_texts):
         for text in recognized_texts:
             file.write(f"{text}\n")  # Write each recognized text on a new line
 
+def create_file_path():
+    # Generate a random suffix
+    random_suffix = random.randint(1000, 9999)  # Example: Random number between 1000 and 9999
+    picture_filename = f"kyc_image_{random_suffix}.png"  # Filename with random suffix
+
+    # Define the directory path
+    output_directory = "data/output/taken_pic"  # Path to the desired folder
+
+    # Create the directory if it doesn't exist
+    os.makedirs(output_directory, exist_ok=True)
+
+    # Complete file path
+    file_path = os.path.join(output_directory, picture_filename)
+
+    return file_path            
+
 def save_captured_image(image, user_id):
     """Save the captured image in the 'captured_images' folder using user ID as part of the filename."""
     # Define the folder for captured images and ensure it exists
@@ -102,8 +116,30 @@ def structure_recognized_text(user_id):
                 structured_data["Date of Birth"] = line.split("DOB")[1].strip()
 
     return structured_data
+# Function to display structured text in Streamlit
+def display_structured_text(structured_data):
+    """Display the structured recognized text in Streamlit."""
+    # st.title("Recognized Driver's License Information")
 
-#string to make a file name
+    if structured_data:
+        with st.form("confirm_details_form"):
+            for key, value in structured_data.items():
+                st.write(f"**{key}:** {value}")
+                # Checkbox for the user to confirm the data
+                st.checkbox(f"Is the above {key} correct?", value=True)
+
+            # Submit button
+            submit_button = st.form_submit_button("Submit")
+
+        if submit_button:
+            st.success(f"Hi {structured_data.get('First Name', 'User')}, you can now upload any relevant photos and explain what happened in your claim.")
+            # Additional functionality for uploading files and further instructions can be added here.
+    else:
+        st.write("No structured data available")
+
+
+
+
+
 def generate_random_string(length=8):
     return ''.join(random.choices(string.ascii_letters + string.digits, k=length))    
-

@@ -49,20 +49,27 @@ To set up the Insurance Assistant Chatbot, follow these steps:
    ```bash
    git clone <repository-url>
    cd <repository-directory>
-2. **Install Required Dependencies**:
+
+2. **Create a virtual environment**:
+   ```bash
+   python -m venv myenv
+   .\myenv\Scripts\activate
+
+3. **Install Required Dependencies**:
      ```bash
      pip install -r requirements.txt
-3. **Environment Variables Setup**
+4. **Environment Variables Setup**
 - To configure the Insurance Assistant Chatbot, create a .env file in the root directory with the following variables:
    ```bash
       API_KEY=gemini
       DATABRICKS_SERVER_HOSTNAME=your_databricks_server_hostname
       DATABRICKS_HTTP_PATH=your_databricks_http_path
       DATABRICKS_TOKEN=your_databricks_token
+      OPENAI_API_KEY=api_key
     
-3. **Running the Application: Start the application using Streamlit:**:
+5. **Running the Application: Start the application using Streamlit:**:
      ```bash
-     streamlit run module/main.py
+     streamlit run main.py
 
    
 
