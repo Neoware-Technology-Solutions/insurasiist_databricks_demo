@@ -1,25 +1,4 @@
-__import__("pysqlite3")
-import sys
-import os
-
-sys.modules["sqlite3"] = sys.modules.pop("pysqlite3")
-
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": os.path.join("./", "db.sqlite3"),
-    }
-}
-
-
-
-
-
-
-
 import streamlit as st
-import chromadb
-import openai
 from dotenv import load_dotenv
 from openai import OpenAI
 import pandas as pd
@@ -27,10 +6,6 @@ import os
 import cv2
 from paddleocr import PaddleOCR  # Make sure to import PaddleOCR
 from paddleocr import draw_ocr  # Import draw_ocr if not already imported
-import numpy as np
-import base64
-import random
-import string
 import streamlit.components.v1 as components
 import google.generativeai as genai
 from IPython.display import display
@@ -65,13 +40,6 @@ load_dotenv()
 api_key = os.getenv("API_KEY")
 genai.configure(api_key=api_key)
 model = genai.GenerativeModel('gemini-1.5-flash')
-
-
-
-
-
-
-
 
 
 
