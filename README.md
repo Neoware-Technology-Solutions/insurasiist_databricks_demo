@@ -11,8 +11,8 @@ The Insurance Assistant Chatbot is designed to assist insurance agents in effici
 - **KYC Submission**: Customers can complete their KYC (Know Your Customer) requirements through the assistant. The assistant collects and verifies the necessary documents, streamlining the KYC process for quick policy activation.
 
 ## Technologies Used
-- **Embedding Model**: `system.ai.bge_large_en_v1_5` for creating embeddings from unstructured policy information.
-- **Language Model**: `mistralsystem.ai.mistral_7b_instruct_v0_2` for generating responses to customer queries based on the context provided.
+- **Embedding Model**: We are using embedding models through databricks for making the vectore store.
+- **Language Model**: Using Openai 3.5 turbo` for generating responses to customer queries based on the context provided.
 - **Image Analysis**: The image analysis is done with the help of `gemini-1.5-flash`
 - **KYC**: PaddleOCR is used to extract and verify text from uploaded KYC documents, ensuring efficient and accurate document processing.
 - **Databricks**: The application runs on Databricks, utilizing its powerful data processing capabilities.
