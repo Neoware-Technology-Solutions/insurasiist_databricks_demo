@@ -39,7 +39,7 @@ The Insurance Assistant Chatbot is designed to assist insurance agents in effici
 
 ## Folder Structure
 
-**Input Folder**: Place example input images in the data/input folder. This folder contains all the images used for image analysis and KYC verification.
+**Input folder**: Placed example input images in data\ui_img.This folder contains all the images used for image analysis and KYC verification. All the documents used for rag is in data\input.
 **Output Folder**: Processed results and recognized texts will be saved in data/output. This folder will be created automatically if it doesn’t exist.
 
 ## Setup Instructions
