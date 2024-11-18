@@ -70,7 +70,7 @@ To set up the Insurance Assistant Chatbot, follow these steps:
     
 5. **Running the Application: Start the application using Streamlit:**:
      ```bash
-     streamlit run main.py
+     streamlit run app.py
 
    
 
