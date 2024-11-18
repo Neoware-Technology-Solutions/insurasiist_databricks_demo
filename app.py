@@ -14,17 +14,23 @@ from PIL import Image
 import PIL.Image
 import time
 from PIL import Image
+import chromadb
+import openai
 
 
 
 
-from src.policy import extract_policyid, load_table, search_policy_in_tables,  retrive_result_from_vector_db, response,final_answer
+from src.policy import fetch_policyid,get_policy_data_and_filter,retrive_result_from_vector_db,final_answer,final_answer_new
 from src.claim import describe_image,create_validation_prompt,matching
 from src.kyc import save_recognized_text_to_txt,save_captured_image,display_structured_text,generate_random_string,ensure_directory_exists,structure_recognized_text,do_pdocr,create_file_path
 
+CSV_PATH = "data\input\customer_database\contact_info.csv"
+CLAIM_CSV_PATH = "data\input\customer_database\claim_data.csv"
 
+client = chromadb.PersistentClient(path="./content")
 
-
+# Create or access a collection
+collection = client.get_collection(name="chunked_text_files_collections1")
 
 # Retrieve Databricks configuration from environment variables
 DATABRICKS_SERVER_HOSTNAME = os.getenv("DATABRICKS_SERVER_HOSTNAME")
@@ -36,7 +42,7 @@ DATABRICKS_TOKEN = os.getenv("DATABRICKS_TOKEN")
 # Load environment variables from .env file
 load_dotenv()
 
-
+openai.api_key=os.getenv("OPENAI_API_KEY")
 api_key = os.getenv("API_KEY")
 genai.configure(api_key=api_key)
 model = genai.GenerativeModel('gemini-1.5-flash')
@@ -65,8 +71,11 @@ if "structured_data" not in st.session_state:
 if 'current_view' not in st.session_state:
     st.session_state.current_view = 'learn'  # Default to learning about policy
 
+if "logged_in" not in st.session_state:
+    st.session_state["logged_in"] = False
 
-
+if "user_id" not in st.session_state:
+    st.session_state["user_id"] = ""
 # Placeholder for chat messages
 st.markdown("""
 <style>
@@ -103,7 +112,7 @@ st.markdown("""
 
 image_path = "data/ui_img/download.png"  # Replace with your image file path
 image = Image.open(image_path)
-st.sidebar.image(image, caption="Your Caption Here",use_column_width=True)
+st.sidebar.image(image, caption="Your Caption Here", use_container_width=True)
 
 # Embed the video in the sidebar
 
@@ -112,8 +121,37 @@ st.sidebar.markdown("<h2>Hey, it's Neo!</h2>", unsafe_allow_html=True)
 st.sidebar.markdown("<h2>Let me help you with your insurance.</h2>", unsafe_allow_html=True)
 # check1 = st.sidebar.button("Know your Policy 📄")
 learn_button = st.sidebar.button("Know your Policy 📄")
-claim_button = st.sidebar.button("File a Claim 📝 📝")
+claim_button = st.sidebar.button("First Notice Of Loss 📝 📝")
 kyc_button = st.sidebar.button("KYC Process 🔍 📸")
+# Login Section
+if not st.session_state["logged_in"]:
+    st.sidebar.markdown("<h2>Welcome! If you have a policy with us, please log in to access your account.</h2>", unsafe_allow_html=True)
+    user_id_input = st.sidebar.text_input("User ID")
+    if st.sidebar.button("Login"):
+        customer_data = pd.read_csv(CSV_PATH)
+        user_info = customer_data[customer_data["PolicyID"] == user_id_input]
+        if not user_info.empty:
+            st.session_state["logged_in"] = True
+            st.session_state["user_id"] = user_id_input
+            user_name = user_info.iloc[0]["Name"]
+            st.sidebar.markdown(
+    f"""
+    <div style="background-color: lightblue; color: black; padding: 10px; border-radius: 5px;">
+        Welcome, {user_name}!
+    </div>
+    """,
+    unsafe_allow_html=True
+)
+
+        else:
+            st.sidebar.error("User ID not found. Please check and try again.")
+else:
+    st.sidebar.write(f"Logged in as: {st.session_state['user_id']}")
+    if st.sidebar.button("Logout", key="logout_button"):
+        st.session_state["logged_in"] = False
+        st.session_state["user_id"] = None
+        st.session_state.policy_chat_messages = []
+
 
 if learn_button:
     st.session_state.current_view = 'learn'
@@ -124,28 +162,36 @@ elif kyc_button:
 
 
 if st.session_state.current_view == 'learn':
-    
-# if check1:
+
+    # Chat messages display
     st.title("Know Your Policy")
-    st.write("💬 Have questions about your insurance? I'm here to help! 🤝 Ask away, and let’s simplify your policy together!.")
-    
-    # Chat functionality for learning about policies
+    st.write("💬 Have questions about your insurance? I'm here to help! 🤝 Ask away!")
+
+    # Display previous chat messages
     for message in st.session_state.policy_chat_messages:
         with st.chat_message(message["role"]):
             st.markdown(message["content"])
-    
+
+    # Chat input for user questions
     if prompt := st.chat_input("How can I help you..."):
+        # If logged in, include the User ID in the prompt for a personalized response
+        if st.session_state["logged_in"] and st.session_state["user_id"]:
+            prompt_with_id = f"My policy ID is {st.session_state['user_id']}. {prompt}"
+            response = final_answer(prompt_with_id)  # Use final_answer if User ID is available
+        else:
+            response = final_answer_new(prompt)  # Use final_answer_new for guests
+
+        # Append user message to chat messages
         st.session_state.policy_chat_messages.append({"role": "user", "content": prompt})
         with st.chat_message("user"):
             st.markdown(prompt)
-        with st.spinner("Processing your question..."):
-        # Replace this with your logic to generate a response about the policy
-            response = final_answer(prompt)  # Example function call
+
+        # Append assistant response to chat messages
         st.session_state.policy_chat_messages.append({"role": "assistant", "content": response})
         with st.chat_message("assistant"):
             st.markdown(response)
 
-
+    # Option to log out if logged in
 elif st.session_state.current_view == 'KYC':
     css = '''
 <style>
@@ -233,35 +279,46 @@ elif st.session_state.current_view == 'KYC':
 
 
 elif st.session_state.current_view == 'claim':
-
     st.markdown("""
     ### Instructions:
     - Upload an asset photo related to your claim.
     - Describe the damages observed in the asset in the text box.
     - Click the 'Submit' button.
-""")
-    # st.write(f"Name: {st.session_state.name}")
-    # st.write(f"License Number: {st.session_state.license_number}")
+    """)
+
+    # Upload an asset photo for the claim
+    Date_of_loss=st.date_input("Date of Loss")
     uploaded_file = st.file_uploader("Upload an Asset Photo for Your Claim", type=["jpg", "jpeg", "png"])
     prompt = st.text_input("Please describe the damages observed in the asset:")
 
- 
-        # Open the uploaded image using PIL
-        
+    # Display claim data for the logged-in user
+    if st.session_state["logged_in"]:
+        user_id = st.session_state["user_id"]
+        customer_claims = pd.read_csv(CLAIM_CSV_PATH)
+        user_claims = customer_claims[customer_claims["PolicyID"] == user_id]  # Filter by UserID
 
-        # Button to submit the response
-    if st.button("Submit"):
-            with st.spinner("Please wait, it will take a few seconds..."):
+        if not user_claims.empty:
+            st.write("### Your Claims Data:")
+            st.dataframe(user_claims)  # Display the claims data for the logged-in user
+        else:
+            st.write("No claims found for your user ID.")
+
+    # If a photo is uploaded and a description is provided, process the claim
+    if uploaded_file and prompt:
+        if st.button("Submit"):
+            with st.spinner("Processing your claim..."):
                 # Simulate processing time
-                time.sleep(5)  # Replace this with your actual processing code
+                time.sleep(5)  # Replace with your actual processing code
+
+                # Open the uploaded image using PIL
                 image = PIL.Image.open(uploaded_file)
 
-        # Display the uploaded image
+                # Display the uploaded image
                 st.image(image, caption="Uploaded Image", width=300)
-                
-                # Generate the AI description
+
+                # Generate the AI description from the image
                 description = describe_image(uploaded_file)
-                
+
                 # Create a validation prompt for comparison
                 input_prompt = create_validation_prompt(description, prompt)
 
@@ -273,6 +330,5 @@ elif st.session_state.current_view == 'claim':
                 st.success(response)
     else:
         st.warning("Please upload an image and describe the damages before submitting.")
-
 components.html(scroll_to_top_js)                
 

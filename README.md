@@ -3,7 +3,7 @@
 
 ## Overview
 
-The Insurance Assistant Chatbot is an AI-powered tool designed to streamline customer service for insurance agents by handling queries related to policy details, claims, and KYC submissions. Leveraging Databricks’ advanced embedding and language models, the chatbot provides precise, context-sensitive answers based on structured customer data and unstructured policy documents. **Its multimodal capabilities allow users to not only ask questions about their policies but also upload images to initiate claims or complete KYC processes, making it an all-in-one, user-friendly solution for efficient insurance support.**
+The Insurance Assistant Chatbot is an AI-powered tool designed to streamline customer service for insurance agents by handling queries related to policy details, claims, and KYC submissions. Leveraging advanced embedding and language models, the chatbot provides precise, context-sensitive answers based on structured customer data and unstructured policy documents. **Its multimodal capabilities allow users to not only ask questions about their policies but also upload images to initiate claims or complete KYC processes, making it an all-in-one, user-friendly solution for efficient insurance support.**
 
 ## Features
 - **Customer Query Handling**: Agents can ask questions about customer insurance policies, and the assistant will provide answers based on the provided context.
@@ -13,11 +13,11 @@ Image Analysis:  Users can upload images of accident-damaged vehicles along with
 - **KYC Submission**: Customers can complete their KYC (Know Your Customer) requirements through the assistant. The assistant collects and verifies the necessary documents, streamlining the KYC process for quick policy activation.
 
 ## Technologies Used
-- **Embedding Model**: `system.ai.bge_large_en_v1_5` for creating embeddings from unstructured policy information.
-- **Language Model**: `mistralsystem.ai.mistral_7b_instruct_v0_2` for generating responses to customer queries based on the context provided.
+- **Embedding Model**: `al-mini-llm` for creating embeddings from unstructured policy information.
+- **Language Model**: `gpt-3.5-turbo` for generating responses to customer queries based on the context provided.
 - **Image Analysis**: The image analysis is done with the help of `gemini-1.5-flash`
 - **KYC**: PaddleOCR is used to extract and verify text from uploaded KYC documents, ensuring efficient and accurate document processing.
-- **Databricks**: The application runs on Databricks, utilizing its powerful data processing capabilities.
+
 
 ## How It Works
 1. **Data Ingestion**: 
@@ -64,9 +64,8 @@ To set up the Insurance Assistant Chatbot, follow these steps:
 - To configure the Insurance Assistant Chatbot, create a .env file in the root directory with the following variables:
    ```bash
       API_KEY=gemini
-      DATABRICKS_SERVER_HOSTNAME=your_databricks_server_hostname
-      DATABRICKS_HTTP_PATH=your_databricks_http_path
-      DATABRICKS_TOKEN=your_databricks_token
+      OPENAI_API_KEY=key
+
     
     
 5. **Running the Application: Start the application using Streamlit:**:
