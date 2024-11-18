@@ -13,7 +13,7 @@ Image Analysis:  Users can upload images of accident-damaged vehicles along with
 - **KYC Submission**: Customers can complete their KYC (Know Your Customer) requirements through the assistant. The assistant collects and verifies the necessary documents, streamlining the KYC process for quick policy activation.
 
 ## Technologies Used
-- **Embedding Model**: `al-mini-llm` for creating embeddings from unstructured policy information.
+- **Embedding Model**: `all-mini-llm` for creating embeddings from unstructured policy information.
 - **Language Model**: `gpt-3.5-turbo` for generating responses to customer queries based on the context provided.
 - **Image Analysis**: The image analysis is done with the help of `gemini-1.5-flash`
 - **KYC**: PaddleOCR is used to extract and verify text from uploaded KYC documents, ensuring efficient and accurate document processing.
