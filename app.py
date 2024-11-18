@@ -32,10 +32,7 @@ client = chromadb.PersistentClient(path="./content")
 # Create or access a collection
 collection = client.get_collection(name="chunked_text_files_collections1")
 
-# Retrieve Databricks configuration from environment variables
-DATABRICKS_SERVER_HOSTNAME = os.getenv("DATABRICKS_SERVER_HOSTNAME")
-DATABRICKS_HTTP_PATH = os.getenv("DATABRICKS_HTTP_PATH")
-DATABRICKS_TOKEN = os.getenv("DATABRICKS_TOKEN")
+
 
 
 
